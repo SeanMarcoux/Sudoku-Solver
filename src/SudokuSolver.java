@@ -47,22 +47,176 @@ public class SudokuSolver extends JFrame{
 	
 	public void solve()
 	{
-		System.out.println();
 		int[] g = {1, checkLines(1)};
-		System.out.println(checkLines(1));
-		ArrayList<Integer> f = needed(g);
+		ArrayList<Integer> f = has(g);
 		for(int x=0; x<f.size(); x++)
 			System.out.print(f.get(x) + " ");
-		System.out.println();
-		
-		g[0] = 2;
-		g[1] = checkLines(2);
-		System.out.println(checkLines(2));
-		f = needed(g);
-		for(int x=0; x<f.size(); x++)
-			System.out.print(f.get(x) + " ");
+		if(solved())
+			System.out.println("Yay!");
+		/*while(!solved())
+		{
+			System.out.println();
+			int[] g = {1, checkLines(1)};
+			System.out.println(checkLines(1));
+			ArrayList<Integer> f = needed(g);
+			for(int x=0; x<f.size(); x++)
+				System.out.print(f.get(x) + " ");
+			System.out.println();
+			
+			g[0] = 2;
+			g[1] = checkLines(2);
+			System.out.println(checkLines(2));
+			f = needed(g);
+			for(int x=0; x<f.size(); x++)
+				System.out.print(f.get(x) + " ");
+			System.out.println();
+			
+			g[0] = 3;
+			g[1] = checkLines(3);
+			System.out.println(g[1]);
+			f = needed(g);
+			for(int x=0; x<f.size(); x++)
+				System.out.print(f.get(x) + " ");
+			
+			solveSingleLines();
+		}*/
 	}
 	
+	//TO DO: Implement method to check which numbers can fit in a spot
+	//TO DO: Implement method to solve a spot if only one number fits
+	//TO DO: Implement method to solve if it is the only spot in its row, column, or box that can hold a specific number
+	
+	//This will check if the puzzle is solveable or not. For now it only checks if there are the same numbers in a row or column
+	public boolean solveable()
+	{
+		int[] array = new int[2];
+		int[] limits;
+		ArrayList<Integer> num;
+		
+		for(int x=0; x<9; x++)
+		{
+			array[1] = x;
+			//Check for the row
+			array[0] = 1;
+			num = has(array);
+			if(num.size() > 0)
+			{
+				for(int y=1; y<num.size(); y++)
+				{
+					if(num.get(y)==num.get(y-1))
+					{
+						return false;
+					}
+				}
+			}
+			//check for the column
+			array[0] = 2;
+			num = has(array);
+			if(num.size() > 0)
+			{
+				for(int y=1; y<num.size(); y++)
+				{
+					if(num.get(y)==num.get(y-1))
+					{
+						return false;
+					}
+				}
+			}
+			//Check for the box
+			array[1] = x+1;
+			array[0] = 3;
+			num = has(array);
+			if(num.size() > 0)
+			{
+				for(int y=1; y<num.size(); y++)
+				{
+					if(num.get(y)==num.get(y-1))
+					{
+						return false;
+					}
+				}
+			}
+		}
+		return true;
+	}
+	
+	//This method checks if the puzzle has been completely solved or not
+	public boolean solved(){
+		for(int x=0; x<9; x++)
+		{
+			for(int y=0; y<9; y++)
+			{
+				if(numbers[x][y] == 0)
+					return false;
+			}
+		}
+		return true;
+	}
+	
+	//The method checks if there are any rows, columns, or boxes with only one empty spot and if so, fills it in
+	public void solveSingleLines(){
+		int[] array = new int[2];
+		int[] limits;
+		ArrayList<Integer> num;
+		array[0] = 1;
+		for(int x=0; x<9; x++)
+		{
+			array[1] = x;
+			num = needed(array);
+			if(num.size() == 1)
+			{
+				for(int y=0; y<9; y++)
+				{
+					if(numbers[x][y] == 0)
+					{
+						numbers[x][y] = num.get(0);
+						labels[x][y].setText(num.get(0) + "");
+					}
+				}
+			}
+		}
+		array[0] = 2;
+		for(int x=0; x<9; x++)
+		{
+			array[1] = x;
+			num = needed(array);
+			if(num.size() == 1)
+			{
+				for(int y=0; y<9; y++)
+				{
+					if(numbers[y][x] == 0)
+					{
+						numbers[y][x] = num.get(0);
+						labels[y][x].setText(num.get(0) + "");
+					}
+				}
+			}
+		}
+		array[0] = 3;
+		for(int x=1; x<=9; x++)
+		{
+			array[1] = x;
+			num = needed(array);
+			if(num.size() == 1)
+			{
+				limits = boxLimits(x);
+				for(int y=limits[0]; y<=limits[1]; y++)
+				{
+					for(int z=limits[2]; z<=limits[3]; z++)
+					{
+						if(numbers[y][z] == 0)
+						{
+							numbers[y][z] = num.get(0);
+							labels[y][z].setText(num.get(0) + "");
+						}
+							
+					}
+				}
+			}
+		}
+	}
+	
+	//This method checks every row (1), column (2), or box (3) to see which has the least open spaces in it
 	public int checkLines(int which)
 	{
 		int count = 9, count2 = 0, index =0;
@@ -102,11 +256,30 @@ public class SudokuSolver extends JFrame{
 		}
 		else
 		{
-			
+			int[] limits;
+			for(int x=1; x<=9; x++)
+			{
+				limits = boxLimits(x);
+				for(int y=limits[0]; y<=limits[1]; y++)
+				{
+					for(int z=limits[2]; z<=limits[3]; z++)
+					{
+						if(numbers[y][z] == 0)
+							count2++;
+					}
+				}
+				if(count2<count)
+				{
+					index = x;
+					count = count2;
+				}
+				count2 = 0;
+			}
 		}
 		return index;
 	}
 	
+	//method figures out what numbers are missing in a given row (line[0] = 1), column (line[0] = 2), or box (line[0] = 3)
 	public ArrayList<Integer> needed(int[] line)
 	{
 		ArrayList<Integer> num = new ArrayList();
@@ -136,9 +309,83 @@ public class SudokuSolver extends JFrame{
 		}
 		else
 		{
-			
+			int[] limits = boxLimits(line[1]);
+			for(int x=limits[0]; x<=limits[1]; x++)
+			{
+				for(int y=limits[2]; y<=limits[3]; y++)
+				{
+					for(int z=0; z<num.size(); z++)
+					{
+						if(numbers[x][y]==num.get(z))
+							num.remove(z);
+					}
+				}
+			}
 		}
 		
+		//sorts the array. Could be helpful, who knows
+		int j, first, temp;  
+	    for (int i = num.size() - 1; i > 0; i--)  
+	    {
+	    	first = 0;
+	    	for(j = 1; j <= i; j ++)
+	    	{
+	    		if(num.get(j) > num.get(first))         
+	    			first = j;
+	    	}
+	    	temp = num.get(first);
+	    	num.set(first, num.get(i));
+	    	num.set(i, temp); 
+	    }
+		return num;
+	}
+	
+	//Gets the numbers that are already in the given row (line[0] = 1), column (line[0] = 2), or box (line[0] = 3)
+	public ArrayList<Integer> has(int[] line)
+	{
+		ArrayList<Integer> num = new ArrayList();
+		if(line[0]==1)
+		{
+			for(int x=0; x<9; x++)
+			{
+				if(numbers[line[1]][x]!=0)
+					num.add(numbers[line[1]][x]);
+			}
+		}
+		else if(line[0]==2)
+		{
+			for(int x=0; x<9; x++)
+			{
+				if(numbers[x][line[1]]!=0)
+					num.add(numbers[x][line[1]]);
+			}
+		}
+		else
+		{
+			int[] limits = boxLimits(line[1]);
+			for(int x=limits[0]; x<=limits[1]; x++)
+			{
+				for(int y=limits[2]; y<=limits[3]; y++)
+				{
+					if(numbers[x][y]!=0)
+						num.add(numbers[x][y]);
+				}
+			}
+		}
+		//sorts the array. Could be helpful, who knows
+		int j, first, temp;  
+		for (int i = num.size() - 1; i > 0; i--)  
+		{
+			first = 0;
+			for(j = 1; j <= i; j ++)
+			{
+				if(num.get(j) > num.get(first))         
+					first = j;
+			}
+			temp = num.get(first);
+			num.set(first, num.get(i));
+			num.set(i, temp);
+		}
 		return num;
 	}
 	
@@ -183,6 +430,21 @@ public class SudokuSolver extends JFrame{
 	class mouse implements MouseListener{
 		@Override
 		public void mouseClicked(MouseEvent e) {
+			
+		}
+		
+		@Override
+		public void mouseEntered(MouseEvent arg0) {
+			// TODO Auto-generated method stub
+			
+		}
+		@Override
+		public void mouseExited(MouseEvent arg0) {
+			// TODO Auto-generated method stub
+			
+		}
+		@Override
+		public void mousePressed(MouseEvent e) {
 			if(!solving)
 			{
 				int x = e.getX();
@@ -227,22 +489,6 @@ public class SudokuSolver extends JFrame{
 				System.out.println("click " + xLoc + " " + yLoc);
 			}
 		}
-		
-		@Override
-		public void mouseEntered(MouseEvent arg0) {
-			// TODO Auto-generated method stub
-			
-		}
-		@Override
-		public void mouseExited(MouseEvent arg0) {
-			// TODO Auto-generated method stub
-			
-		}
-		@Override
-		public void mousePressed(MouseEvent arg0) {
-			// TODO Auto-generated method stub
-			
-		}
 		@Override
 		public void mouseReleased(MouseEvent arg0) {
 			// TODO Auto-generated method stub
@@ -263,76 +509,85 @@ public class SudokuSolver extends JFrame{
 		}
 		@Override
 		public void keyTyped(KeyEvent e) {
-			char c = e.getKeyChar();
-			System.out.println(c);
 			if(!solving)
-			switch(c)
 			{
-			case '1':
-				if(xLoc>-1 && yLoc>-1)
+				char c = e.getKeyChar();
+				System.out.println(c);
+				switch(c)
 				{
-					numbers[yLoc][xLoc] = 1;
-					labels[yLoc][xLoc].setText("1");
+					case (char)KeyEvent.VK_BACK_SPACE:
+					case (char)KeyEvent.VK_DELETE:
+						if(xLoc>-1 && yLoc>-1)
+						{
+							numbers[yLoc][xLoc] = 0;
+							labels[yLoc][xLoc].setText("");
+						}
+						break;
+					case '1':
+						if(xLoc>-1 && yLoc>-1)
+						{
+							numbers[yLoc][xLoc] = 1;
+							labels[yLoc][xLoc].setText("1");
+						}
+						break;
+					case '2':
+						if(xLoc>-1 && yLoc>-1)
+						{
+							numbers[yLoc][xLoc] = 2;
+							labels[yLoc][xLoc].setText("2");
+						}
+						break;
+					case '3':
+						if(xLoc>-1 && yLoc>-1)
+						{
+							numbers[yLoc][xLoc] = 3;
+							labels[yLoc][xLoc].setText("3");
+						}
+						break;
+					case '4':
+						if(xLoc>-1 && yLoc>-1)
+						{
+							numbers[yLoc][xLoc] = 4;
+							labels[yLoc][xLoc].setText("4");
+						}
+						break;
+					case '5':
+						if(xLoc>-1 && yLoc>-1)
+						{
+							numbers[yLoc][xLoc] = 5;
+							labels[yLoc][xLoc].setText("5");
+						}
+						break;
+					case '6':
+						if(xLoc>-1 && yLoc>-1)
+						{
+							numbers[yLoc][xLoc] = 6;
+							labels[yLoc][xLoc].setText("6");
+						}
+						break;
+					case '7':
+						if(xLoc>-1 && yLoc>-1)
+						{
+							numbers[yLoc][xLoc] = 7;
+							labels[yLoc][xLoc].setText("7");
+						}
+						break;
+					case '8':
+						if(xLoc>-1 && yLoc>-1)
+						{
+							numbers[yLoc][xLoc] = 8;
+							labels[yLoc][xLoc].setText("8");
+						}
+						break;
+					case '9':
+						if(xLoc>-1 && yLoc>-1)
+						{
+							numbers[yLoc][xLoc] = 9;
+							labels[yLoc][xLoc].setText("9");
+						}
+						break;
 				}
-				break;
-			case '2':
-				if(xLoc>-1 && yLoc>-1)
-				{
-					numbers[yLoc][xLoc] = 2;
-					labels[yLoc][xLoc].setText("2");
-				}
-				break;
-			case '3':
-				if(xLoc>-1 && yLoc>-1)
-				{
-					numbers[yLoc][xLoc] = 3;
-					labels[yLoc][xLoc].setText("3");
-				}
-				break;
-			case '4':
-				if(xLoc>-1 && yLoc>-1)
-				{
-					numbers[yLoc][xLoc] = 4;
-					labels[yLoc][xLoc].setText("4");
-				}
-				break;
-			case '5':
-				if(xLoc>-1 && yLoc>-1)
-				{
-					numbers[yLoc][xLoc] = 5;
-					labels[yLoc][xLoc].setText("5");
-				}
-				break;
-			case '6':
-				if(xLoc>-1 && yLoc>-1)
-				{
-					numbers[yLoc][xLoc] = 6;
-					labels[yLoc][xLoc].setText("6");
-				}
-				break;
-			case '7':
-				if(xLoc>-1 && yLoc>-1)
-				{
-					numbers[yLoc][xLoc] = 7;
-					labels[yLoc][xLoc].setText("7");
-				}
-				break;
-			case '8':
-				if(xLoc>-1 && yLoc>-1)
-				{
-					numbers[yLoc][xLoc] = 8;
-					labels[yLoc][xLoc].setText("8");
-				}
-				break;
-			case '9':
-				if(xLoc>-1 && yLoc>-1)
-				{
-					numbers[yLoc][xLoc] = 9;
-					labels[yLoc][xLoc].setText("9");
-				}
-				break;
 			}
-			
 		}
 	}
 	
@@ -340,8 +595,19 @@ public class SudokuSolver extends JFrame{
 
 		@Override
 		public void actionPerformed(ActionEvent arg0) {
-			solving = true;
-			solve();
+			if(solveable())
+			{
+				System.out.println("here");
+				solving = true;
+				solve();
+			}
+			// PROBLEM: Can't edit shit after this???
+			else
+			{
+				JOptionPane.showMessageDialog(null, "This puzzle is unsolveable. try changing it");
+				System.out.println("ERROR");
+				panel.setFocusable(true);
+			}
 		}
 		
 	}
