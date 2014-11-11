@@ -51,6 +51,7 @@ public class SudokuSolver extends JFrame{
 		ArrayList<Integer> f = has(g);
 		for(int x=0; x<f.size(); x++)
 			System.out.print(f.get(x) + " ");
+		solveSingleLines();
 		if(solved())
 			System.out.println("Yay!");
 		/*while(!solved())
@@ -85,6 +86,12 @@ public class SudokuSolver extends JFrame{
 	//TO DO: Implement method to check which numbers can fit in a spot
 	//TO DO: Implement method to solve a spot if only one number fits
 	//TO DO: Implement method to solve if it is the only spot in its row, column, or box that can hold a specific number
+	
+	//IDEA: Solve method will run the method that solves single spaces and the method to solve a spot if only one number fits until neither of them fill in a
+	//		spot (they'll return false if they don't fill a spot). And then it'll run the method to solve if it is the only spot in its row, column, or box 
+	//		that can hold a specific number. It'll loop between these until it is solved
+	//		Obviously this won't solve everything, but I'll keep it that way until I implement methods for testing guesses. Once I have that, then it'll loop
+	//		until none of those 3 methods fill in a spot and then it'll start guessing until it gets the real answer
 	
 	//This will check if the puzzle is solveable or not. For now it only checks if there are the same numbers in a row or column
 	public boolean solveable()
