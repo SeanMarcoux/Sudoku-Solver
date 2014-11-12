@@ -4,8 +4,11 @@ import java.util.*;
 
 import javax.swing.*;
 
+
+//Note about 2d arrays: [row][column]
 public class SudokuSolver extends JFrame{
-	private int[][] numbers = new int[9][9];
+	//private int[][] numbers = new int[9][9];
+	private Point[][] numbers = new Point[9][9];
 	private JLabel[][] labels = new JLabel[9][9];
 	private JButton button = new JButton("Solve");
 	private JPanel panel = new JPanel();
@@ -19,7 +22,8 @@ public class SudokuSolver extends JFrame{
 		for(int x=0; x<9; x++)
 			for(int y=0; y<9;y++)
 			{
-				numbers[x][y] = 0;
+				numbers[x][y] = new Point(x, y);
+				//numbers[x][y] = 0;
 				labels[x][y] = new JLabel("");
 				//labels[x][y].setText(" sswfew");
 				labels[x][y].setBorder(BorderFactory.createLineBorder(Color.black));
@@ -93,6 +97,32 @@ public class SudokuSolver extends JFrame{
 	//		Obviously this won't solve everything, but I'll keep it that way until I implement methods for testing guesses. Once I have that, then it'll loop
 	//		until none of those 3 methods fill in a spot and then it'll start guessing until it gets the real answer
 	
+	public void updatePossible()
+	{
+		ArrayList<Integer> possible = new ArrayList();
+		int[] has = new int[2];
+		for(int x=0; x<9; x++)
+		{
+			for(int y=0; y<9; y++)
+			{
+				if(numbers[x][y].getValue()==0)
+				{
+					//go through that point's box, row, and column and remove all values found
+					numbers[x][y].fillPossible();
+					has[0]=1;
+					has[1]=y;
+					numbers[x][y].removePossible(has(has));
+					has[0]=2;
+					has[1]=x;
+					numbers[x][y].removePossible(has(has));
+					has[0]=3;
+					has[1]=numbers[x][y].whichBox();
+					numbers[x][y].removePossible(has(has));
+				}
+			}
+		}
+	}
+	
 	//This will check if the puzzle is solveable or not. For now it only checks if there are the same numbers in a row or column
 	public boolean solveable()
 	{
@@ -153,7 +183,7 @@ public class SudokuSolver extends JFrame{
 		{
 			for(int y=0; y<9; y++)
 			{
-				if(numbers[x][y] == 0)
+				if(numbers[x][y].getValue() == 0)
 					return false;
 			}
 		}
@@ -174,9 +204,9 @@ public class SudokuSolver extends JFrame{
 			{
 				for(int y=0; y<9; y++)
 				{
-					if(numbers[x][y] == 0)
+					if(numbers[x][y].getValue() == 0)
 					{
-						numbers[x][y] = num.get(0);
+						numbers[x][y].setValue(num.get(0));
 						labels[x][y].setText(num.get(0) + "");
 					}
 				}
@@ -191,9 +221,9 @@ public class SudokuSolver extends JFrame{
 			{
 				for(int y=0; y<9; y++)
 				{
-					if(numbers[y][x] == 0)
+					if(numbers[y][x].getValue() == 0)
 					{
-						numbers[y][x] = num.get(0);
+						numbers[y][x].setValue(num.get(0));
 						labels[y][x].setText(num.get(0) + "");
 					}
 				}
@@ -211,9 +241,9 @@ public class SudokuSolver extends JFrame{
 				{
 					for(int z=limits[2]; z<=limits[3]; z++)
 					{
-						if(numbers[y][z] == 0)
+						if(numbers[y][z].getValue() == 0)
 						{
-							numbers[y][z] = num.get(0);
+							numbers[y][z].setValue(num.get(0));
 							labels[y][z].setText(num.get(0) + "");
 						}
 							
@@ -233,7 +263,7 @@ public class SudokuSolver extends JFrame{
 			{
 				for(int y=0; y<9; y++)
 				{
-					if(numbers[x][y] == 0)
+					if(numbers[x][y].getValue() == 0)
 						count2++;
 				}
 				if(count2<count)
@@ -250,7 +280,7 @@ public class SudokuSolver extends JFrame{
 			{
 				for(int y=0; y<9; y++)
 				{
-					if(numbers[y][x] == 0)
+					if(numbers[y][x].getValue() == 0)
 						count2++;
 				}
 				if(count2<count)
@@ -271,7 +301,7 @@ public class SudokuSolver extends JFrame{
 				{
 					for(int z=limits[2]; z<=limits[3]; z++)
 					{
-						if(numbers[y][z] == 0)
+						if(numbers[y][z].getValue() == 0)
 							count2++;
 					}
 				}
@@ -298,7 +328,7 @@ public class SudokuSolver extends JFrame{
 			{
 				for(int y=0; y<num.size();y++)
 				{
-					if(numbers[line[1]][x]==num.get(y))
+					if(numbers[line[1]][x].getValue()==num.get(y))
 						num.remove(y);
 				}
 			}
@@ -309,7 +339,7 @@ public class SudokuSolver extends JFrame{
 			{
 				for(int y=0; y<num.size();y++)
 				{
-					if(numbers[x][line[1]]==num.get(y))
+					if(numbers[x][line[1]].getValue()==num.get(y))
 						num.remove(y);
 				}
 			}
@@ -323,7 +353,7 @@ public class SudokuSolver extends JFrame{
 				{
 					for(int z=0; z<num.size(); z++)
 					{
-						if(numbers[x][y]==num.get(z))
+						if(numbers[x][y].getValue()==num.get(z))
 							num.remove(z);
 					}
 				}
@@ -355,16 +385,16 @@ public class SudokuSolver extends JFrame{
 		{
 			for(int x=0; x<9; x++)
 			{
-				if(numbers[line[1]][x]!=0)
-					num.add(numbers[line[1]][x]);
+				if(numbers[line[1]][x].getValue()!=0)
+					num.add(numbers[line[1]][x].getValue());
 			}
 		}
 		else if(line[0]==2)
 		{
 			for(int x=0; x<9; x++)
 			{
-				if(numbers[x][line[1]]!=0)
-					num.add(numbers[x][line[1]]);
+				if(numbers[x][line[1]].getValue()!=0)
+					num.add(numbers[x][line[1]].getValue());
 			}
 		}
 		else
@@ -374,8 +404,8 @@ public class SudokuSolver extends JFrame{
 			{
 				for(int y=limits[2]; y<=limits[3]; y++)
 				{
-					if(numbers[x][y]!=0)
-						num.add(numbers[x][y]);
+					if(numbers[x][y].getValue()!=0)
+						num.add(numbers[x][y].getValue());
 				}
 			}
 		}
@@ -494,6 +524,11 @@ public class SudokuSolver extends JFrame{
 				else
 					yLoc = 8;
 				System.out.println("click " + xLoc + " " + yLoc);
+				System.out.println("x: " + numbers[xLoc][yLoc].getX() + " y: " + numbers[xLoc][yLoc].getY() + " box: " + numbers[xLoc][yLoc].whichBox());
+				updatePossible();
+				for(int i=0; i<numbers[xLoc][yLoc].getPossible().size(); i++)
+					System.out.print(numbers[xLoc][yLoc].getPossible(i) + " ");
+				System.out.println();
 			}
 		}
 		@Override
@@ -526,70 +561,70 @@ public class SudokuSolver extends JFrame{
 					case (char)KeyEvent.VK_DELETE:
 						if(xLoc>-1 && yLoc>-1)
 						{
-							numbers[yLoc][xLoc] = 0;
+							numbers[yLoc][xLoc].setValue(0);
 							labels[yLoc][xLoc].setText("");
 						}
 						break;
 					case '1':
 						if(xLoc>-1 && yLoc>-1)
 						{
-							numbers[yLoc][xLoc] = 1;
+							numbers[yLoc][xLoc].setValue(1);
 							labels[yLoc][xLoc].setText("1");
 						}
 						break;
 					case '2':
 						if(xLoc>-1 && yLoc>-1)
 						{
-							numbers[yLoc][xLoc] = 2;
+							numbers[yLoc][xLoc].setValue(2);
 							labels[yLoc][xLoc].setText("2");
 						}
 						break;
 					case '3':
 						if(xLoc>-1 && yLoc>-1)
 						{
-							numbers[yLoc][xLoc] = 3;
+							numbers[yLoc][xLoc].setValue(3);
 							labels[yLoc][xLoc].setText("3");
 						}
 						break;
 					case '4':
 						if(xLoc>-1 && yLoc>-1)
 						{
-							numbers[yLoc][xLoc] = 4;
+							numbers[yLoc][xLoc].setValue(4);
 							labels[yLoc][xLoc].setText("4");
 						}
 						break;
 					case '5':
 						if(xLoc>-1 && yLoc>-1)
 						{
-							numbers[yLoc][xLoc] = 5;
+							numbers[yLoc][xLoc].setValue(5);
 							labels[yLoc][xLoc].setText("5");
 						}
 						break;
 					case '6':
 						if(xLoc>-1 && yLoc>-1)
 						{
-							numbers[yLoc][xLoc] = 6;
+							numbers[yLoc][xLoc].setValue(6);
 							labels[yLoc][xLoc].setText("6");
 						}
 						break;
 					case '7':
 						if(xLoc>-1 && yLoc>-1)
 						{
-							numbers[yLoc][xLoc] = 7;
+							numbers[yLoc][xLoc].setValue(7);
 							labels[yLoc][xLoc].setText("7");
 						}
 						break;
 					case '8':
 						if(xLoc>-1 && yLoc>-1)
 						{
-							numbers[yLoc][xLoc] = 8;
+							numbers[yLoc][xLoc].setValue(8);
 							labels[yLoc][xLoc].setText("8");
 						}
 						break;
 					case '9':
 						if(xLoc>-1 && yLoc>-1)
 						{
-							numbers[yLoc][xLoc] = 9;
+							numbers[yLoc][xLoc].setValue(9);
 							labels[yLoc][xLoc].setText("9");
 						}
 						break;
