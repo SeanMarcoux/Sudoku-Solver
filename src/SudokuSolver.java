@@ -4,6 +4,11 @@ import java.util.*;
 
 import javax.swing.*;
 
+//To do: improve solveOnlySingle method
+//To do: improve updatePossible method to remove a possibility if it definitely has to go somewhere else in that line or row (I don't think that applies to boxes, though)
+//To do: clean up GUI (some thicker lines on the edges of the boxes would be nice)
+//To do: implement guess and test system?? Is that necessary???
+//Error: solveOnlyPossible isn't working right, apparently. But why (it's giving possibilities to things with values???) (pretty damn sure I fixed it)
 
 //Note about 2d arrays: [row][column]
 public class SudokuSolver extends JFrame{
@@ -22,7 +27,7 @@ public class SudokuSolver extends JFrame{
 		for(int x=0; x<9; x++)
 			for(int y=0; y<9;y++)
 			{
-				numbers[x][y] = new Point(x, y);
+				numbers[x][y] = new Point(y, x);
 				//numbers[x][y] = 0;
 				labels[x][y] = new JLabel("");
 				//labels[x][y].setText(" sswfew");
@@ -55,7 +60,11 @@ public class SudokuSolver extends JFrame{
 		ArrayList<Integer> f = has(g);
 		for(int x=0; x<f.size(); x++)
 			System.out.print(f.get(x) + " ");
-		solveSingleLines();
+		//solveSingleLines();
+		do
+		{
+			updatePossible();
+		}while(solveOnlyPossible()||solvePossible());
 		if(solved())
 			System.out.println("Yay!");
 		/*while(!solved())
@@ -87,8 +96,6 @@ public class SudokuSolver extends JFrame{
 		}*/
 	}
 	
-	//TO DO: Implement method to check which numbers can fit in a spot
-	//TO DO: Implement method to solve a spot if only one number fits
 	//TO DO: Implement method to solve if it is the only spot in its row, column, or box that can hold a specific number
 	
 	//IDEA: Solve method will run the method that solves single spaces and the method to solve a spot if only one number fits until neither of them fill in a
@@ -97,6 +104,7 @@ public class SudokuSolver extends JFrame{
 	//		Obviously this won't solve everything, but I'll keep it that way until I implement methods for testing guesses. Once I have that, then it'll loop
 	//		until none of those 3 methods fill in a spot and then it'll start guessing until it gets the real answer
 	
+	//For each point this will update what numbers are possible there
 	public void updatePossible()
 	{
 		ArrayList<Integer> possible = new ArrayList();
@@ -110,10 +118,10 @@ public class SudokuSolver extends JFrame{
 					//go through that point's box, row, and column and remove all values found
 					numbers[x][y].fillPossible();
 					has[0]=1;
-					has[1]=y;
+					has[1]=x;
 					numbers[x][y].removePossible(has(has));
 					has[0]=2;
-					has[1]=x;
+					has[1]=y;
 					numbers[x][y].removePossible(has(has));
 					has[0]=3;
 					has[1]=numbers[x][y].whichBox();
@@ -121,6 +129,87 @@ public class SudokuSolver extends JFrame{
 				}
 			}
 		}
+	}
+	
+	//If there is only one possibility at the site, it will fill it in
+	public boolean solvePossible()
+	{
+		for(int x=0; x<9; x++)
+		{
+			for(int y=0; y<9; y++)
+			{
+				if(numbers[x][y].getPossible().size()==1)
+				{
+					numbers[x][y].setValue(numbers[x][y].getPossible(0));
+					labels[x][y].setText("" + numbers[x][y].getPossible(0));
+					numbers[x][y].fillPossible();
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+	
+	//If this is the only space in a row, column, or box that something is possible, then it will fill that spot
+	//This could be done more efficiently so that I don't have to call the update possible method so often.
+	public boolean solveOnlyPossible()
+	{
+		int[] limits;
+		for(int x=0; x<9; x++)
+		{
+			for(int y=0; y<9; y++)
+			{
+				if(numbers[x][y].getValue()==0)
+				{
+					for(int i=0; i<9; i++)
+					{
+						if(i!=x)
+							numbers[x][y].removePossible(numbers[i][y].getPossible());
+					}
+					if(numbers[x][y].getPossible().size()==1)
+					{
+						numbers[x][y].setValue(numbers[x][y].getPossible(0));
+						labels[x][y].setText("" + numbers[x][y].getPossible(0));
+						numbers[x][y].fillPossible();
+						return true;
+					}
+					
+					updatePossible();
+					for(int j=0; j<9; j++)
+					{
+						if(j!=y)
+							numbers[x][y].removePossible(numbers[x][j].getPossible());
+					}
+					if(numbers[x][y].getPossible().size()==1)
+					{
+						numbers[x][y].setValue(numbers[x][y].getPossible(0));
+						labels[x][y].setText("" + numbers[x][y].getPossible(0));
+						numbers[x][y].fillPossible();
+						return true;
+					}
+					updatePossible();
+					
+					limits=boxLimits(numbers[x][y].whichBox());
+					for(int a=limits[0]; a<=limits[1]; a++)
+					{
+						for(int z=limits[2]; z<=limits[3]; z++)
+						{
+							if(a!=x||z!=y)
+								numbers[x][y].removePossible(numbers[a][z].getPossible());
+						}
+					}
+					if(numbers[x][y].getPossible().size()==1)
+					{
+						numbers[x][y].setValue(numbers[x][y].getPossible(0));
+						labels[x][y].setText("" + numbers[x][y].getPossible(0));
+						numbers[x][y].fillPossible();
+						return true;
+					}
+					updatePossible();
+				}
+			}
+		}
+		return false;
 	}
 	
 	//This will check if the puzzle is solveable or not. For now it only checks if there are the same numbers in a row or column
@@ -426,6 +515,7 @@ public class SudokuSolver extends JFrame{
 		return num;
 	}
 	
+	//Returns the boundary points of the box. [0] and [1] are the row limits and [2] and [3] are the column limits
 	public int[] boxLimits(int box)
 	{
 		int[] limits = new int[4];
@@ -482,7 +572,7 @@ public class SudokuSolver extends JFrame{
 		}
 		@Override
 		public void mousePressed(MouseEvent e) {
-			if(!solving)
+			//if(!solving)
 			{
 				int x = e.getX();
 				int y = e.getY();
@@ -524,10 +614,10 @@ public class SudokuSolver extends JFrame{
 				else
 					yLoc = 8;
 				System.out.println("click " + xLoc + " " + yLoc);
-				System.out.println("x: " + numbers[xLoc][yLoc].getX() + " y: " + numbers[xLoc][yLoc].getY() + " box: " + numbers[xLoc][yLoc].whichBox());
+				System.out.println("value: " + numbers[yLoc][xLoc].getValue() + " x: " + numbers[yLoc][xLoc].getX() + " y: " + numbers[yLoc][xLoc].getY() + " box: " + numbers[yLoc][xLoc].whichBox());
 				updatePossible();
-				for(int i=0; i<numbers[xLoc][yLoc].getPossible().size(); i++)
-					System.out.print(numbers[xLoc][yLoc].getPossible(i) + " ");
+				for(int i=0; i<numbers[yLoc][xLoc].getPossible().size(); i++)
+					System.out.print(numbers[yLoc][xLoc].getPossible(i) + " ");
 				System.out.println();
 			}
 		}
@@ -570,6 +660,7 @@ public class SudokuSolver extends JFrame{
 						{
 							numbers[yLoc][xLoc].setValue(1);
 							labels[yLoc][xLoc].setText("1");
+							numbers[yLoc][xLoc].fillPossible();
 						}
 						break;
 					case '2':
@@ -577,6 +668,7 @@ public class SudokuSolver extends JFrame{
 						{
 							numbers[yLoc][xLoc].setValue(2);
 							labels[yLoc][xLoc].setText("2");
+							numbers[yLoc][xLoc].fillPossible();
 						}
 						break;
 					case '3':
@@ -584,6 +676,7 @@ public class SudokuSolver extends JFrame{
 						{
 							numbers[yLoc][xLoc].setValue(3);
 							labels[yLoc][xLoc].setText("3");
+							numbers[yLoc][xLoc].fillPossible();
 						}
 						break;
 					case '4':
@@ -591,6 +684,7 @@ public class SudokuSolver extends JFrame{
 						{
 							numbers[yLoc][xLoc].setValue(4);
 							labels[yLoc][xLoc].setText("4");
+							numbers[yLoc][xLoc].fillPossible();
 						}
 						break;
 					case '5':
@@ -598,6 +692,7 @@ public class SudokuSolver extends JFrame{
 						{
 							numbers[yLoc][xLoc].setValue(5);
 							labels[yLoc][xLoc].setText("5");
+							numbers[yLoc][xLoc].fillPossible();
 						}
 						break;
 					case '6':
@@ -605,6 +700,7 @@ public class SudokuSolver extends JFrame{
 						{
 							numbers[yLoc][xLoc].setValue(6);
 							labels[yLoc][xLoc].setText("6");
+							numbers[yLoc][xLoc].fillPossible();
 						}
 						break;
 					case '7':
@@ -612,6 +708,7 @@ public class SudokuSolver extends JFrame{
 						{
 							numbers[yLoc][xLoc].setValue(7);
 							labels[yLoc][xLoc].setText("7");
+							numbers[yLoc][xLoc].fillPossible();
 						}
 						break;
 					case '8':
@@ -619,6 +716,7 @@ public class SudokuSolver extends JFrame{
 						{
 							numbers[yLoc][xLoc].setValue(8);
 							labels[yLoc][xLoc].setText("8");
+							numbers[yLoc][xLoc].fillPossible();
 						}
 						break;
 					case '9':
@@ -626,6 +724,7 @@ public class SudokuSolver extends JFrame{
 						{
 							numbers[yLoc][xLoc].setValue(9);
 							labels[yLoc][xLoc].setText("9");
+							numbers[yLoc][xLoc].fillPossible();
 						}
 						break;
 				}
@@ -641,6 +740,14 @@ public class SudokuSolver extends JFrame{
 			{
 				System.out.println("here");
 				solving = true;
+				for(int x=0; x<9; x++)
+				{
+					for(int y=0; y<9;y++)
+					{
+						if(numbers[x][y].getValue()==0)
+							labels[x][y].setForeground(Color.RED);
+					}
+				}
 				solve();
 			}
 			// PROBLEM: Can't edit shit after this???

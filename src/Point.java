@@ -70,6 +70,8 @@ public class Point {
 			{
 				if(possible.get(i)==has.get(j))
 					possible.remove(i);
+				if(i>=possible.size())
+					break;
 			}
 		}
 	}
