@@ -5,10 +5,15 @@ import java.util.*;
 import javax.swing.*;
 
 //To do: improve solveOnlySingle method
-//To do: improve updatePossible method to remove a possibility if it definitely has to go somewhere else in that line or row (I don't think that applies to boxes, though)
 //To do: clean up GUI (some thicker lines on the edges of the boxes would be nice)
-//To do: implement guess and test system?? Is that necessary???
+//To do: implement guess and test system?? Is that necessary??? It probably is for the insanely hard puzzles, sigh
 //Error: solveOnlyPossible isn't working right, apparently. But why (it's giving possibilities to things with values???) (pretty damn sure I fixed it)
+
+//IDEA: Solve method will run the method that solves single spaces and the method to solve a spot if only one number fits until neither of them fill in a
+	//		spot (they'll return false if they don't fill a spot). And then it'll run the method to solve if it is the only spot in its row, column, or box 
+	//		that can hold a specific number. It'll loop between these until it is solved
+	//		Obviously this won't solve everything, but I'll keep it that way until I implement methods for testing guesses. Once I have that, then it'll loop
+	//		until none of those 3 methods fill in a spot and then it'll start guessing until it gets the real answer
 
 //Note about 2d arrays: [row][column]
 public class SudokuSolver extends JFrame{
@@ -56,10 +61,10 @@ public class SudokuSolver extends JFrame{
 	
 	public void solve()
 	{
-		int[] g = {1, checkLines(1)};
+		/*int[] g = {1, checkLines(1)};
 		ArrayList<Integer> f = has(g);
 		for(int x=0; x<f.size(); x++)
-			System.out.print(f.get(x) + " ");
+			System.out.print(f.get(x) + " ");*/
 		//solveSingleLines();
 		do
 		{
@@ -96,19 +101,26 @@ public class SudokuSolver extends JFrame{
 		}*/
 	}
 	
-	//TO DO: Implement method to solve if it is the only spot in its row, column, or box that can hold a specific number
-	
-	//IDEA: Solve method will run the method that solves single spaces and the method to solve a spot if only one number fits until neither of them fill in a
-	//		spot (they'll return false if they don't fill a spot). And then it'll run the method to solve if it is the only spot in its row, column, or box 
-	//		that can hold a specific number. It'll loop between these until it is solved
-	//		Obviously this won't solve everything, but I'll keep it that way until I implement methods for testing guesses. Once I have that, then it'll loop
-	//		until none of those 3 methods fill in a spot and then it'll start guessing until it gets the real answer
+	public ArrayList removeFromArrayList(ArrayList<Integer> array1, ArrayList<Integer> array2){
+		for(int i=0; i<array1.size(); i++)
+		{
+			for(int j=0; j<array2.size(); j++)
+			{
+				if(array1.get(i)==array2.get(j))
+					array1.remove(i);
+				if(i>=array1.size())
+					break;
+			}
+		}
+		return array1;
+	}
 	
 	//For each point this will update what numbers are possible there
 	public void updatePossible()
 	{
-		ArrayList<Integer> possible = new ArrayList();
+		ArrayList<Integer> shared = new ArrayList();
 		int[] has = new int[2];
+		int[] limits;
 		for(int x=0; x<9; x++)
 		{
 			for(int y=0; y<9; y++)
@@ -129,6 +141,126 @@ public class SudokuSolver extends JFrame{
 				}
 			}
 		}
+		
+		//Update all the possibilities to remove stuff that has to necessarily appear somewhere else in the row (because it can't fit anywhere else in that box
+		boolean updated;
+		//This loop makes sure all the possibilities are sufficiently updated, since who knows. Maybe by updating them like this it'll make there be some more
+		//spots that need to be updated in the same way
+		do{
+			updated=false;
+			for(int x=1; x<=9; x++)
+			{
+				limits = boxLimits(x);
+				//First row of box
+				shared = numbers[limits[0]][limits[2]].getShared(numbers[limits[0]][limits[2]+1].getShared(numbers[limits[0]][limits[2]+2].getPossible()));
+				for(int y=limits[0]; y<=limits[1]; y++)
+				{
+					for(int z=limits[2]; z<=limits[3]; z++)
+					{
+						if(y!=limits[0]||(z!=limits[2]&&z!=limits[2]+1&&z!=limits[2]+2))
+							shared = removeFromArrayList(shared, numbers[y][z].getPossible());
+					}
+				}
+				for(int y=0; y<9; y++)
+				{
+					if(y!=limits[2]&&y!=limits[2]+1&&y!=limits[2]+2)
+					{
+						if(numbers[limits[0]][y].removePossible(shared))
+							updated=true;
+					}
+				}
+				//Second row
+				shared = numbers[limits[0]+1][limits[2]].getShared(numbers[limits[0]+1][limits[2]+1].getShared(numbers[limits[0]+1][limits[2]+2].getPossible()));
+				for(int y=limits[0]; y<=limits[1]; y++)
+				{
+					for(int z=limits[2]; z<=limits[3]; z++)
+					{
+						if(y!=limits[0]+1||(z!=limits[2]&&z!=limits[2]+1&&z!=limits[2]+2))
+							shared = removeFromArrayList(shared, numbers[y][z].getPossible());
+					}
+				}
+				for(int y=0; y<9; y++)
+				{
+					if(y!=limits[2]&&y!=limits[2]+1&&y!=limits[2]+2)
+					{
+						if(numbers[limits[0]+1][y].removePossible(shared))
+							updated=true;
+					}
+				}
+				//Third row
+				shared = numbers[limits[0]+2][limits[2]].getShared(numbers[limits[0]+2][limits[2]+1].getShared(numbers[limits[0]+2][limits[2]+2].getPossible()));
+				for(int y=limits[0]; y<=limits[1]; y++)
+				{
+					for(int z=limits[2]; z<=limits[3]; z++)
+					{
+						if(y!=limits[0]+2||(z!=limits[2]&&z!=limits[2]+1&&z!=limits[2]+2))
+							shared = removeFromArrayList(shared, numbers[y][z].getPossible());
+					}
+				}
+				for(int y=0; y<9; y++)
+				{
+					if(y!=limits[2]&&y!=limits[2]+1&&y!=limits[2]+2)
+					{
+						if(numbers[limits[0]+2][y].removePossible(shared))
+							updated=true;
+					}
+				}
+				//First column
+				shared = numbers[limits[0]][limits[2]].getShared(numbers[limits[0]+1][limits[2]].getShared(numbers[limits[0]+2][limits[2]].getPossible()));
+				for(int y=limits[0]; y<=limits[1]; y++)
+				{
+					for(int z=limits[2]; z<=limits[3]; z++)
+					{
+						if(z!=limits[2]||(y!=limits[0]&&y!=limits[0]+1&&y!=limits[0]+2))
+							shared = removeFromArrayList(shared, numbers[y][z].getPossible());
+					}
+				}
+				for(int y=0; y<9; y++)
+				{
+					if(y!=limits[0]&&y!=limits[0]+1&&y!=limits[0]+2)
+					{
+						if(numbers[y][limits[2]].removePossible(shared))
+							updated=true;
+					}
+				}
+				//Second column
+				shared = numbers[limits[0]][limits[2]+1].getShared(numbers[limits[0]+1][limits[2]+1].getShared(numbers[limits[0]+2][limits[2]+1].getPossible()));
+				for(int y=limits[0]; y<=limits[1]; y++)
+				{
+					for(int z=limits[2]; z<=limits[3]; z++)
+					{
+						if(z!=limits[2]+1||(y!=limits[0]&&y!=limits[0]+1&&y!=limits[0]+2))
+							shared = removeFromArrayList(shared, numbers[y][z].getPossible());
+					}
+				}
+				for(int y=0; y<9; y++)
+				{
+					if(y!=limits[0]&&y!=limits[0]+1&&y!=limits[0]+2)
+					{
+						if(numbers[y][limits[2]+1].removePossible(shared))
+							updated=true;
+					}
+				}
+				//Third column
+				shared = numbers[limits[0]][limits[2]+2].getShared(numbers[limits[0]+1][limits[2]+2].getShared(numbers[limits[0]+2][limits[2]+2].getPossible()));
+				for(int y=limits[0]; y<=limits[1]; y++)
+				{
+					for(int z=limits[2]; z<=limits[3]; z++)
+					{
+						if(z!=limits[2]+2||(y!=limits[0]&&y!=limits[0]+1&&y!=limits[0]+2))
+							shared = removeFromArrayList(shared, numbers[y][z].getPossible());
+					}
+				}
+				for(int y=0; y<9; y++)
+				{
+					if(y!=limits[0]&&y!=limits[0]+1&&y!=limits[0]+2)
+					{
+						if(numbers[y][limits[2]+2].removePossible(shared))
+							updated=true;
+					}
+				}
+			}
+		}while(updated);
 	}
 	
 	//If there is only one possibility at the site, it will fill it in
@@ -619,6 +751,9 @@ public class SudokuSolver extends JFrame{
 				for(int i=0; i<numbers[yLoc][xLoc].getPossible().size(); i++)
 					System.out.print(numbers[yLoc][xLoc].getPossible(i) + " ");
 				System.out.println();
+				/*for(int i=0; i<numbers[yLoc][xLoc].getShared(numbers[yLoc][xLoc+1].getPossible()).size(); i++)
+					System.out.print(numbers[yLoc][xLoc].getShared(numbers[yLoc][xLoc+1].getPossible()).get(i) + " ");
+				System.out.println();*/
 			}
 		}
 		@Override

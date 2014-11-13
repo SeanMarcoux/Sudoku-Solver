@@ -62,18 +62,37 @@ public class Point {
 		}
 	}
 	
-	public void removePossible(ArrayList<Integer> has)
+	public boolean removePossible(ArrayList<Integer> has)
 	{
+		boolean removed = false;
 		for(int i=0; i<possible.size(); i++)
 		{
 			for(int j=0; j<has.size(); j++)
 			{
 				if(possible.get(i)==has.get(j))
+				{
 					possible.remove(i);
+					removed = true;
+				}
 				if(i>=possible.size())
 					break;
 			}
 		}
+		return removed;
+	}
+	
+	public ArrayList getShared(ArrayList<Integer> array)
+	{
+		ArrayList<Integer> shared = new ArrayList();
+		for(int i=0; i<possible.size(); i++)
+		{
+			for(int j=0; j<array.size(); j++)
+			{
+				if(possible.get(i)==array.get(j))
+					shared.add(possible.get(i));
+			}
+		}
+		return shared;
 	}
 	
 	public void fillPossible()
