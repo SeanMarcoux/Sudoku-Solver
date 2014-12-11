@@ -46,7 +46,7 @@ public class Point {
 		System.out.println();
 	}
 	
-	public ArrayList getPossible()
+	public ArrayList<Integer> getPossible()
 	{
 		return possible;
 	}
@@ -130,6 +130,15 @@ public class Point {
 				if(array.get(i)==possible.get(j))
 					return true;
 			}
+		}
+		return false;
+	}
+	
+	public boolean containsOne(int num){
+		for(int j=0; j<possible.size(); j++)
+		{
+			if(num==possible.get(j))
+				return true;
 		}
 		return false;
 	}

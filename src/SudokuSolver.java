@@ -162,7 +162,7 @@ public class SudokuSolver extends JFrame{
 		boolean updated;
 		//This loop makes sure all the possibilities are sufficiently updated, since who knows. Maybe by updating them like this it'll make there be some more
 		//spots that need to be updated in the same way
-		do{
+		/*do{
 			updated=false;
 			for(int x=1; x<=9; x++)
 			{
@@ -276,92 +276,258 @@ public class SudokuSolver extends JFrame{
 					}
 				}
 			}
-		}while(updated);
-		
-		//now detect any twins and update possibilities accordingly (for an explanation of this, check http://www.sudokudragon.com/sudokustrategy.htm)
-		ArrayList<Integer> twins = new ArrayList();
-		twins.add(0);
-		twins.add(1);
-		int[] location = new int[2];
-		int count=0;
-		boolean notTwins=false;
-		//iterates through the boxes
-		for(int x=1; x<=9; x++){
-			limits = boxLimits(x);
-			//iterates through the current box
-			for(int y=limits[0]; y<=limits[1]; y++)
-			{
-				for(int z=limits[2]; z<=limits[3]; z++)
+		}while(updated);*/
+		do{
+			//this first thing checks if there is a number that necessarily appear in a certain row or a column of a box and if so, removes it from the
+			//possibilities of the stuff in the rest of the row/column
+			updated=false;
+			boolean good=true;
+			int num=0;
+			//iterates through the boxes
+			for(int x=1; x<=9; x++){
+				limits = boxLimits(x);
+				//iterates through the current box
+				for(int y=limits[0]; y<=limits[1]; y++)
 				{
-					//iterates for every possible pair
-					if(numbers[y][z].getPossible().size()>1){
-						for(int a=0; a<numbers[y][z].getPossible().size()-1; a++){
-							twins.set(0, numbers[y][z].getPossible(a));
-							for(int b=a+1; b<numbers[y][z].getPossible().size(); b++){
-								twins.set(1, numbers[y][z].getPossible(b));
+					for(int z=limits[2]; z<=limits[3]; z++)
+					{
+						//iterates for every possible
+						for(int a=0; a<numbers[y][z].getPossible().size(); a++)
+						{
+							good=true;
+							num=numbers[y][z].getPossible().get(a);
+							//iterates through every other point in the box
+							for(int c=limits[0]; c<=limits[1]; c++)
+							{
+								for(int d=limits[2]; d<=limits[3]; d++)
+								{
+									if(c!=y&&numbers[c][d].containsOne(num))
+									{
+										good=false;
+									}
+								}
+							}
+							if(good)
+							{
+								for(int i=0; i<9; i++)
+								{
+									if((i<limits[2]||i>limits[3])&&numbers[y][i].containsOne(num))
+									{
+										numbers[y][i].removePossible(num);
+										updated=true;
+									}
+								}
+							}
+							else
+							{
+								good=true;
 								//iterates through every other point in the box
 								for(int c=limits[0]; c<=limits[1]; c++)
 								{
 									for(int d=limits[2]; d<=limits[3]; d++)
 									{
-										if((c!=y||d!=z)&&numbers[c][d].contains(twins)){
-											count++;
-											location[0]=c;
-											location[1]=d;
+										if(d!=z&&numbers[c][d].containsOne(num))
+										{
+											good=false;
 										}
 									}
 								}
-								//check again through the box to make sure that nothing in the box contains either element of the twins
-								for(int g=limits[0]; g<=limits[1]; g++)
+								if(good)
 								{
-									for(int h=limits[2]; h<=limits[3]; h++)
+									for(int i=0; i<9; i++)
 									{
-										if((!(g==y&&h==z))&&(!(g==location[0]&&h==location[1]))&&numbers[g][h].containsOne(twins))
-											notTwins=true;
-									}
-								}
-								//what to do if twins are found
-								if(count==1&&(!notTwins))
-								{
-									System.out.println("twins stuff");
-									System.out.println(y + " " + z);
-									numbers[y][z].printPossible();
-									System.out.println(location[0] + " " + location[1]);
-									numbers[location[0]][location[1]].printPossible();
-									for (Integer number : twins) {
-								        System.out.print(number + " ");
-								      } 
-									System.out.println();System.out.println();System.out.println();
-									
-									
-									
-									/*a=numbers[y][z].getPossible().size()-1;
-									b=numbers[y][z].getPossible().size();*/
-									numbers[y][z].setPossible(twins);
-									numbers[location[0]][location[1]].setPossible(twins);
-									if(y==location[0]){
-										for(int e=0; e<9; e++){
-											if(e!=z&&e!=location[1]){
-												numbers[y][e].removePossible(twins);
-											}
-										}
-									}
-									else if(z==location[1]){
-										for(int f=0; f<9; f++){
-											if(f!=y&&f!=location[0]){
-												numbers[f][z].removePossible(twins);
-											}
+										if((i<limits[0]||i>limits[1])&&numbers[i][z].containsOne(num))
+										{
+											numbers[i][z].removePossible(num);
+											updated=true;
 										}
 									}
 								}
-								count=0;
-								notTwins=false;
 							}
 						}
 					}
 				}
 			}
-		}
+		
+		
+			//now detect any twins and update possibilities accordingly (for an explanation of this, check http://www.sudokudragon.com/sudokustrategy.htm)
+			ArrayList<Integer> twins = new ArrayList();
+			twins.add(0);
+			twins.add(1);
+			int[] location = new int[2];
+			int count=0;
+			boolean notTwins=false;
+			//iterates through the boxes
+			for(int x=1; x<=9; x++){
+				limits = boxLimits(x);
+				//iterates through the current box
+				for(int y=limits[0]; y<=limits[1]; y++)
+				{
+					for(int z=limits[2]; z<=limits[3]; z++)
+					{
+						//iterates for every possible pair
+						if(numbers[y][z].getPossible().size()>1){
+							for(int a=0; a<numbers[y][z].getPossible().size()-1; a++){
+								twins.set(0, numbers[y][z].getPossible(a));
+								for(int b=a+1; b<numbers[y][z].getPossible().size(); b++){
+									twins.set(1, numbers[y][z].getPossible(b));
+									//iterates through every other point in the box
+									for(int c=limits[0]; c<=limits[1]; c++)
+									{
+										for(int d=limits[2]; d<=limits[3]; d++)
+										{
+											if((c!=y||d!=z)&&numbers[c][d].contains(twins)){
+												count++;
+												location[0]=c;
+												location[1]=d;
+											}
+										}
+									}
+									//check again through the box to make sure that nothing in the box contains either element of the twins
+									for(int g=limits[0]; g<=limits[1]; g++)
+									{
+										for(int h=limits[2]; h<=limits[3]; h++)
+										{
+											if((!(g==y&&h==z))&&(!(g==location[0]&&h==location[1]))&&numbers[g][h].containsOne(twins))
+												notTwins=true;
+										}
+									}
+									//what to do if twins are found
+									if(count==1&&(!notTwins))
+									{
+										System.out.println("twins stuff");
+										System.out.println(y + " " + z);
+										numbers[y][z].printPossible();
+										System.out.println(location[0] + " " + location[1]);
+										numbers[location[0]][location[1]].printPossible();
+										for (Integer number : twins) {
+									        System.out.print(number + " ");
+									      } 
+										System.out.println();System.out.println();System.out.println();
+										
+										
+										
+										/*a=numbers[y][z].getPossible().size()-1;
+										b=numbers[y][z].getPossible().size();*/
+										numbers[y][z].setPossible(twins);
+										numbers[location[0]][location[1]].setPossible(twins);
+										if(y==location[0]){
+											for(int e=0; e<9; e++){
+												if(e!=z&&e!=location[1]){
+													numbers[y][e].removePossible(twins);
+												}
+											}
+										}
+										else if(z==location[1]){
+											for(int f=0; f<9; f++){
+												if(f!=y&&f!=location[0]){
+													numbers[f][z].removePossible(twins);
+												}
+											}
+										}
+									}
+									count=0;
+									notTwins=false;
+								}
+							}
+						}
+					}
+				}
+			}
+			
+			//now same deal, but for triplets (method is baaaasically the same)
+			twins.add(0);
+			int[] location2=new int[2];
+			//iterates through the boxes
+			for(int x=1; x<=9; x++){
+				limits = boxLimits(x);
+				//iterates through the current box
+				for(int y=limits[0]; y<=limits[1]; y++)
+				{
+					for(int z=limits[2]; z<=limits[3]; z++)
+					{
+						//iterates for every possible pair
+						if(numbers[y][z].getPossible().size()>1){
+							for(int a=0; a<numbers[y][z].getPossible().size()-2; a++){
+								twins.set(0, numbers[y][z].getPossible(a));
+								for(int b=a+1; b<numbers[y][z].getPossible().size()-1; b++){
+									twins.set(1, numbers[y][z].getPossible(b));
+									for(int i=b+1; i<numbers[y][z].getPossible().size(); i++){
+										twins.set(2, numbers[y][z].getPossible(i));
+										//iterates through every other point in the box
+										for(int c=limits[0]; c<=limits[1]; c++)
+										{
+											for(int d=limits[2]; d<=limits[3]; d++)
+											{
+												if((c!=y||d!=z)&&numbers[c][d].contains(twins)){
+													count++;
+													if(count==2)
+													{
+														location2[0]=c;
+														location2[1]=d;
+													}
+													else
+													{
+														location[0]=c;
+														location[1]=d;
+													}
+												}
+											}
+										}
+										//check again through the box to make sure that nothing in the box contains either element of the twins
+										for(int g=limits[0]; g<=limits[1]; g++)
+										{
+											for(int h=limits[2]; h<=limits[3]; h++)
+											{
+												if((!(g==y&&h==z))&&(!(g==location[0]&&h==location[1]))&&(!(g==location2[0]&&h==location2[1]))&&numbers[g][h].containsOne(twins))
+													notTwins=true;
+											}
+										}
+										//what to do if twins are found
+										if(count==2&&(!notTwins))
+										{
+											System.out.println("triplets stuff");
+											System.out.println(y + " " + z);
+											numbers[y][z].printPossible();
+											System.out.println(location[0] + " " + location[1]);
+											numbers[location[0]][location[1]].printPossible();
+											for (Integer number : twins) {
+										        System.out.print(number + " ");
+										      } 
+											System.out.println();System.out.println();System.out.println();
+											
+											
+											
+											/*a=numbers[y][z].getPossible().size()-1;
+											b=numbers[y][z].getPossible().size();*/
+											numbers[y][z].setPossible(twins);
+											numbers[location[0]][location[1]].setPossible(twins);
+											numbers[location2[0]][location2[1]].setPossible(twins);
+											if(y==location[0]){
+												for(int e=0; e<9; e++){
+													if(e!=z&&e!=location[1]){
+														numbers[y][e].removePossible(twins);
+													}
+												}
+											}
+											else if(z==location[1]){
+												for(int f=0; f<9; f++){
+													if(f!=y&&f!=location[0]){
+														numbers[f][z].removePossible(twins);
+													}
+												}
+											}
+										}
+										count=0;
+										notTwins=false;
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}while(updated);
 	}
 	
 	//If there is only one possibility at the site, it will fill it in
