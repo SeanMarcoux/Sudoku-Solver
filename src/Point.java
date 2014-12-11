@@ -38,6 +38,14 @@ public class Point {
 		return possible.get(index);
 	}
 	
+	public void printPossible(){
+		for(int i=0; i<possible.size(); i++)
+		{
+			System.out.print(possible.get(i)+ " ");
+		}
+		System.out.println();
+	}
+	
 	public ArrayList getPossible()
 	{
 		return possible;
@@ -95,6 +103,37 @@ public class Point {
 		return shared;
 	}
 	
+	public boolean contains(ArrayList<Integer> array){
+		boolean contains=true;
+		boolean containTemp=false;
+		for(int i=0; i<array.size(); i++)
+		{
+			for(int j=0; j<possible.size(); j++)
+			{
+				if(array.get(i) == possible.get(j)){
+					containTemp=true;
+				}
+			}
+			if(!containTemp)
+				return false;
+			else
+				containTemp=false;
+		}
+		return contains;
+	}
+	
+	public boolean containsOne(ArrayList<Integer> array){
+		for(int i=0; i<array.size(); i++)
+		{
+			for(int j=0; j<possible.size(); j++)
+			{
+				if(array.get(i)==possible.get(j))
+					return true;
+			}
+		}
+		return false;
+	}
+	
 	public void fillPossible()
 	{
 		possible.clear();
@@ -107,7 +146,9 @@ public class Point {
 	
 	public void setPossible(ArrayList<Integer> possible)
 	{
-		this.possible = possible;
+		this.possible.clear();
+		for(int i=0; i<possible.size(); i++)
+			this.possible.add(possible.get(i));
 	}
 	
 	public int whichBox()

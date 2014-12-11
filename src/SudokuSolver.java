@@ -57,6 +57,20 @@ public class SudokuSolver extends JFrame{
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.setVisible(true);
 		//frame.addKeyListener(new key());
+		/*Point point=new Point(1,1);
+		point.addPossible(1);
+		point.addPossible(2);
+		point.addPossible(3);
+		point.addPossible(4);
+		ArrayList<Integer> array = new ArrayList();
+		array.add(1);
+		array.add(2);
+		
+		point.printPossible();
+		if(point.contains(array))
+			System.out.println("woo");
+		else
+			System.out.println("nope");*/
 	}
 	
 	public void solve()
@@ -142,7 +156,9 @@ public class SudokuSolver extends JFrame{
 			}
 		}
 		
-		//Update all the possibilities to remove stuff that has to necessarily appear somewhere else in the row (because it can't fit anywhere else in that box
+		//PROBLEM: so yeah, this is a fundamentally flawed thing I did here. This only updates the stuff if EVERYTHING that is shared is not anywhere else. But
+		//		   say they share 1, 2, 7, 8, 9 and the 8 is the only thing that necessarily has to go in that column, it won't properly update things
+		//Update all the possibilities to remove stuff that has to necessarily appear somewhere else in the row (because it can't fit anywhere else in that box)
 		boolean updated;
 		//This loop makes sure all the possibilities are sufficiently updated, since who knows. Maybe by updating them like this it'll make there be some more
 		//spots that need to be updated in the same way
@@ -261,6 +277,91 @@ public class SudokuSolver extends JFrame{
 				}
 			}
 		}while(updated);
+		
+		//now detect any twins and update possibilities accordingly (for an explanation of this, check http://www.sudokudragon.com/sudokustrategy.htm)
+		ArrayList<Integer> twins = new ArrayList();
+		twins.add(0);
+		twins.add(1);
+		int[] location = new int[2];
+		int count=0;
+		boolean notTwins=false;
+		//iterates through the boxes
+		for(int x=1; x<=9; x++){
+			limits = boxLimits(x);
+			//iterates through the current box
+			for(int y=limits[0]; y<=limits[1]; y++)
+			{
+				for(int z=limits[2]; z<=limits[3]; z++)
+				{
+					//iterates for every possible pair
+					if(numbers[y][z].getPossible().size()>1){
+						for(int a=0; a<numbers[y][z].getPossible().size()-1; a++){
+							twins.set(0, numbers[y][z].getPossible(a));
+							for(int b=a+1; b<numbers[y][z].getPossible().size(); b++){
+								twins.set(1, numbers[y][z].getPossible(b));
+								//iterates through every other point in the box
+								for(int c=limits[0]; c<=limits[1]; c++)
+								{
+									for(int d=limits[2]; d<=limits[3]; d++)
+									{
+										if((c!=y||d!=z)&&numbers[c][d].contains(twins)){
+											count++;
+											location[0]=c;
+											location[1]=d;
+										}
+									}
+								}
+								//check again through the box to make sure that nothing in the box contains either element of the twins
+								for(int g=limits[0]; g<=limits[1]; g++)
+								{
+									for(int h=limits[2]; h<=limits[3]; h++)
+									{
+										if((!(g==y&&h==z))&&(!(g==location[0]&&h==location[1]))&&numbers[g][h].containsOne(twins))
+											notTwins=true;
+									}
+								}
+								//what to do if twins are found
+								if(count==1&&(!notTwins))
+								{
+									System.out.println("twins stuff");
+									System.out.println(y + " " + z);
+									numbers[y][z].printPossible();
+									System.out.println(location[0] + " " + location[1]);
+									numbers[location[0]][location[1]].printPossible();
+									for (Integer number : twins) {
+								        System.out.print(number + " ");
+								      } 
+									System.out.println();System.out.println();System.out.println();
+									
+									
+									
+									/*a=numbers[y][z].getPossible().size()-1;
+									b=numbers[y][z].getPossible().size();*/
+									numbers[y][z].setPossible(twins);
+									numbers[location[0]][location[1]].setPossible(twins);
+									if(y==location[0]){
+										for(int e=0; e<9; e++){
+											if(e!=z&&e!=location[1]){
+												numbers[y][e].removePossible(twins);
+											}
+										}
+									}
+									else if(z==location[1]){
+										for(int f=0; f<9; f++){
+											if(f!=y&&f!=location[0]){
+												numbers[f][z].removePossible(twins);
+											}
+										}
+									}
+								}
+								count=0;
+								notTwins=false;
+							}
+						}
+					}
+				}
+			}
+		}
 	}
 	
 	//If there is only one possibility at the site, it will fill it in
@@ -745,12 +846,13 @@ public class SudokuSolver extends JFrame{
 					yLoc = 7;
 				else
 					yLoc = 8;
-				System.out.println("click " + xLoc + " " + yLoc);
+				/*System.out.println("click " + xLoc + " " + yLoc);
 				System.out.println("value: " + numbers[yLoc][xLoc].getValue() + " x: " + numbers[yLoc][xLoc].getX() + " y: " + numbers[yLoc][xLoc].getY() + " box: " + numbers[yLoc][xLoc].whichBox());
-				updatePossible();
+				*/updatePossible();
+				System.out.println("possible stuff");
 				for(int i=0; i<numbers[yLoc][xLoc].getPossible().size(); i++)
 					System.out.print(numbers[yLoc][xLoc].getPossible(i) + " ");
-				System.out.println();
+				System.out.println();System.out.println();System.out.println();
 				/*for(int i=0; i<numbers[yLoc][xLoc].getShared(numbers[yLoc][xLoc+1].getPossible()).size(); i++)
 					System.out.print(numbers[yLoc][xLoc].getShared(numbers[yLoc][xLoc+1].getPossible()).get(i) + " ");
 				System.out.println();*/
@@ -779,7 +881,7 @@ public class SudokuSolver extends JFrame{
 			if(!solving)
 			{
 				char c = e.getKeyChar();
-				System.out.println(c);
+				//System.out.println(c);
 				switch(c)
 				{
 					case (char)KeyEvent.VK_BACK_SPACE:
